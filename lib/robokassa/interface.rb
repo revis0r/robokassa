@@ -4,6 +4,8 @@ require 'net/https'
 require 'open-uri'
 require 'rexml/document'
 
+class Robokassa::InvalidSignature    < ArgumentError; end
+
 class Robokassa::Interface
   include ActionDispatch::Routing::UrlFor
   include Rails.application.routes.url_helpers
@@ -44,13 +46,18 @@ class Robokassa::Interface
   
   # This method verificates request params recived from robocassa server
   def notify(params, controller)
-    parsed_params = map_params(params, @@notification_params_map)
-    self.class.notify_implementation(
-      parsed_params[:invoice_id], 
-      parsed_params[:amount], 
-      parsed_params[:custom_options], 
-      controller)
-    "OK#{parsed_params[:invoice_id]}"
+    begin
+      parse_response_params(params)
+      parsed_params = map_params(params, @@notification_params_map)
+      self.class.notify_implementation(
+        parsed_params[:invoice_id], 
+        parsed_params[:amount], 
+        parsed_params[:custom_options], 
+        controller)
+      "OK#{parsed_params[:invoice_id]}"
+    rescue Robokassa::InvalidSignature
+      "BAD"
+    end
   end
   
   # Handler for success api callback
@@ -205,7 +212,7 @@ class Robokassa::Interface
     parsed_params = map_params(params, @@notification_params_map)
     parsed_params[:custom_options] = Hash[args.select do |k,v| o.starts_with?('shp') end.sort.map do|k, v| [k[3, k.size], v] end]
     if response_signature(parsed_params)!=parsed_params[:signature].downcase
-      raise "Invalid signature"
+      raise Robokassa::InvalidSignature
     end
   end
 
