@@ -5,6 +5,8 @@ class Robokassa::Controller < ActionController::Base
     interface = Robokassa.interface_class.create_by_notification_key params[:notification_key]
     params.delete :notification_key
     render :text => interface.notify(params, self)
+  rescue Robokassa::InvalidNotificationKey
+    render :text => 'BAD'
   end
 
   def success

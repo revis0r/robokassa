@@ -5,6 +5,7 @@ require 'open-uri'
 require 'rexml/document'
 
 class Robokassa::InvalidSignature    < ArgumentError; end
+class Robokassa::InvalidNotificationKey    < ArgumentError; end
 
 class Robokassa::Interface
   include ActionDispatch::Routing::UrlFor
@@ -212,7 +213,7 @@ class Robokassa::Interface
     parsed_params = map_params(params, @@notification_params_map)
     parsed_params[:custom_options] = Hash[args.select do |k,v| o.starts_with?('shp') end.sort.map do|k, v| [k[3, k.size], v] end]
     if response_signature(parsed_params)!=parsed_params[:signature].downcase
-      raise Robokassa::InvalidSignature
+      raise new Robokassa::InvalidSignature
     end
   end
 
