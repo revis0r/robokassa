@@ -1,3 +1,9 @@
+require 'rubygems'
+require 'rails'
+
+%w(interface controller).each do |file|
+  require File.join(File.dirname(__FILE__), 'robokassa', file)
+end
 module Robokassa
   mattr_accessor :interface_class
 
